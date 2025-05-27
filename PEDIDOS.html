@@ -1,0 +1,269 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gestión de Pedidos y Tickets</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f0f2f5;
+            display: flex;
+            justify-content: center;
+            align-items: flex-start;
+            min-height: 100vh;
+            padding: 1rem;
+        }
+        .container {
+            background-color: #ffffff;
+            border-radius: 1rem;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+            padding: 2rem;
+            width: 100%;
+            max-width: 800px;
+            display: flex;
+            flex-direction: column;
+            gap: 2rem;
+        }
+        .section-title {
+            font-size: 1.5rem;
+            font-weight: bold;
+            color: #333;
+            margin-bottom: 1rem;
+            border-bottom: 2px solid #e2e8f0;
+            padding-bottom: 0.5rem;
+        }
+        input, select {
+            border: 1px solid #cbd5e0;
+            border-radius: 0.5rem;
+            padding: 0.75rem 1rem;
+            width: 100%;
+            font-size: 1rem;
+            transition: border-color 0.2s;
+        }
+        input:focus, select:focus {
+            outline: none;
+            border-color: #6366f1; /* Indigo 500 */
+        }
+        button {
+            background-color: #6366f1; /* Indigo 500 */
+            color: white;
+            padding: 0.75rem 1.5rem;
+            border-radius: 0.75rem;
+            font-weight: bold;
+            transition: background-color 0.2s, transform 0.1s;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+        button:hover {
+            background-color: #4f46e5; /* Indigo 600 */
+            transform: translateY(-1px);
+        }
+        button:active {
+            background-color: #4338ca; /* Indigo 700 */
+            transform: translateY(0);
+        }
+        .ticket-preview {
+            border: 1px dashed #a0aec0;
+            background-color: #f7fafc;
+            padding: 1.5rem;
+            border-radius: 0.75rem;
+            white-space: pre-wrap; /* Preserve formatting for ticket */
+            font-family: 'Courier New', Courier, monospace;
+            font-size: 0.9rem;
+            color: #2d3748;
+        }
+        @media print {
+            body * {
+                visibility: hidden;
+            }
+            #ticketSection, #ticketSection * {
+                visibility: visible;
+            }
+            #ticketSection {
+                position: absolute;
+                left: 0;
+                top: 0;
+                width: 100%;
+                height: 100%;
+                margin: 0;
+                padding: 1rem;
+                box-shadow: none;
+                background-color: white;
+                color: black;
+            }
+            .no-print {
+                display: none !important;
+            }
+        }
+    </style>
+</head>
+<body class="bg-gray-100 p-4">
+    <div class="container">
+        <div class="no-print">
+            <h2 class="section-title">Datos del Cliente</h2>
+            <div class="mb-4">
+                <label for="clientName" class="block text-gray-700 text-sm font-bold mb-2">Nombre del Cliente:</label>
+                <input type="text" id="clientName" placeholder="Escribe el nombre del cliente" class="shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-md">
+            </div>
+        </div>
+
+        <div class="no-print">
+            <h2 class="section-title">Productos</h2>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                <div>
+                    <label for="productSelect" class="block text-gray-700 text-sm font-bold mb-2">Selecciona un Producto:</label>
+                    <select id="productSelect" class="shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-md">
+                        <option value="">-- Selecciona --</option>
+                        <option value="chocolate_moneda">Chocolate de Moneda ($5/unidad)</option>
+                        <option value="huevos_almendrados">Huevos Almendrados ($10/unidad)</option>
+                    </select>
+                </div>
+                <div>
+                    <label for="quantity" class="block text-gray-700 text-sm font-bold mb-2">Cantidad:</label>
+                    <input type="number" id="quantity" min="1" value="1" class="shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-md">
+                </div>
+            </div>
+            <button id="addProductBtn" class="w-full md:w-auto px-6 py-3 rounded-xl text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
+                Agregar Producto
+            </button>
+        </div>
+
+        <div class="no-print">
+            <h2 class="section-title">Resumen del Pedido</h2>
+            <div class="bg-gray-50 p-4 rounded-lg shadow-inner">
+                <ul id="orderSummaryList" class="list-disc pl-5 text-gray-800">
+                    </ul>
+                <p class="text-right text-lg font-bold mt-4">Total: <span id="totalAmount">$0.00</span></p>
+            </div>
+            <button id="generateTicketBtn" class="mt-6 w-full md:w-auto px-6 py-3 rounded-xl text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500">
+                Generar Ticket
+            </button>
+        </div>
+
+        <div id="ticketSection" class="hidden ticket-preview">
+            </div>
+
+        <button id="printTicketBtn" class="no-print hidden mt-4 w-full md:w-auto px-6 py-3 rounded-xl text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
+            Imprimir Ticket
+        </button>
+    </div>
+
+    <script>
+        // Definición de productos con sus precios por unidad
+        const products = {
+            chocolate_moneda: { name: "Chocolate de Moneda", price: 5.00 },
+            huevos_almendrados: { name: "Huevos Almendrados", price: 10.00 }
+        };
+
+        let currentOrder = []; // Array para almacenar los productos en el pedido
+
+        // Referencias a elementos del DOM
+        const clientNameInput = document.getElementById('clientName');
+        const productSelect = document.getElementById('productSelect');
+        const quantityInput = document.getElementById('quantity');
+        const addProductBtn = document.getElementById('addProductBtn');
+        const orderSummaryList = document.getElementById('orderSummaryList');
+        const totalAmountSpan = document.getElementById('totalAmount');
+        const generateTicketBtn = document.getElementById('generateTicketBtn');
+        const ticketSection = document.getElementById('ticketSection');
+        const printTicketBtn = document.getElementById('printTicketBtn');
+
+        // Función para actualizar el resumen del pedido y el total
+        function updateOrderSummary() {
+            orderSummaryList.innerHTML = ''; // Limpiar la lista actual
+            let total = 0;
+
+            currentOrder.forEach(item => {
+                const listItem = document.createElement('li');
+                listItem.textContent = `${item.name} x ${item.quantity} unidades = $${(item.price * item.quantity).toFixed(2)}`;
+                orderSummaryList.appendChild(listItem);
+                total += item.price * item.quantity;
+            });
+
+            totalAmountSpan.textContent = `$${total.toFixed(2)}`;
+        }
+
+        // Event listener para el botón "Agregar Producto"
+        addProductBtn.addEventListener('click', () => {
+            const selectedProductType = productSelect.value;
+            const quantity = parseInt(quantityInput.value);
+
+            if (!selectedProductType || quantity <= 0 || isNaN(quantity)) {
+                alert('Por favor, selecciona un producto y una cantidad válida.');
+                return;
+            }
+
+            const productInfo = products[selectedProductType];
+            if (productInfo) {
+                // Verificar si el producto ya está en el pedido para actualizar la cantidad
+                const existingItemIndex = currentOrder.findIndex(item => item.type === selectedProductType);
+
+                if (existingItemIndex > -1) {
+                    currentOrder[existingItemIndex].quantity += quantity;
+                } else {
+                    currentOrder.push({
+                        type: selectedProductType,
+                        name: productInfo.name,
+                        price: productInfo.price,
+                        quantity: quantity
+                    });
+                }
+                updateOrderSummary();
+                // Resetear la cantidad a 1 después de agregar
+                quantityInput.value = 1;
+            }
+        });
+
+        // Event listener para el botón "Generar Ticket"
+        generateTicketBtn.addEventListener('click', () => {
+            const clientName = clientNameInput.value.trim();
+            if (!clientName) {
+                alert('Por favor, ingresa el nombre del cliente para generar el ticket.');
+                return;
+            }
+
+            if (currentOrder.length === 0) {
+                alert('El pedido está vacío. Agrega productos antes de generar el ticket.');
+                return;
+            }
+
+            let ticketContent = `
+----------------------------------------
+        TICKET DE COMPRA
+----------------------------------------
+Fecha: ${new Date().toLocaleDateString()}
+Hora: ${new Date().toLocaleTimeString()}
+Cliente: ${clientName}
+----------------------------------------
+Productos:
+`;
+            let total = 0;
+            currentOrder.forEach(item => {
+                const subtotal = item.price * item.quantity;
+                ticketContent += `${item.name.padEnd(25)} x ${String(item.quantity).padEnd(3)} = $${subtotal.toFixed(2).padStart(8)}\n`;
+                total += subtotal;
+            });
+
+            ticketContent += `
+----------------------------------------
+Total a Pagar:              $${total.toFixed(2)}
+----------------------------------------
+        ¡Gracias por tu compra!
+----------------------------------------
+`;
+            ticketSection.textContent = ticketContent;
+            ticketSection.classList.remove('hidden');
+            printTicketBtn.classList.remove('hidden'); // Mostrar el botón de imprimir
+        });
+
+        // Event listener para el botón "Imprimir Ticket"
+        printTicketBtn.addEventListener('click', () => {
+            window.print();
+        });
+
+        // Inicializar el resumen del pedido al cargar la página
+        updateOrderSummary();
+    </script>
+</body>
+</html>
